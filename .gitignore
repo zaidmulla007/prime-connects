@@ -1,0 +1,35 @@
+# Windows null device artifact
+nul
+
+# CodeIgniter writable directory (debugbar, logs, cache, sessions)
+backend/writable/debugbar/
+backend/writable/logs/
+backend/writable/cache/
+backend/writable/session/
+
+# One-time seeder scripts
+backend/seed_*.php
+
+# Backend environment
+backend/.env
+
+# Frontend environment
+frontend/prime-connect/.env.local
+frontend/prime-connect/.env*.local
+
+# Admin CMS environment
+admin-cms/admin-cms/.env
+
+# Node modules
+node_modules/
+frontend/prime-connect/node_modules/
+admin-cms/admin-cms/node_modules/
+
+# Build output
+frontend/prime-connect/.next/
+frontend/prime-connect/out/
+admin-cms/admin-cms/dist/
+
+# OS
+.DS_Store
+Thumbs.db

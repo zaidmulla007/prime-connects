@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Search, SlidersHorizontal, ChevronDown, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Search, SlidersHorizontal, ChevronDown, X } from "lucide-react";
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../context/LanguageContext";
@@ -35,14 +35,6 @@ interface Category {
     parent_id: number | null;
 }
 
-const specImages: { [key: string]: string[] } = {
-    'mdf-doors': ['/mdf-doors-details/3.png', '/mdf-doors-details/4.png', '/mdf-doors-details/5.png', '/mdf-doors-details/6.png', '/mdf-doors-details/7.png'],
-    'wpc-doors': ['/wpc-door-details/9.png', '/wpc-door-details/10.png', '/wpc-door-details/11.png', '/wpc-door-details/12.png', '/wpc-door-details/13.png'],
-    'iron-and-steel-doors': ['/iron-steel-doors-details/15.png', '/iron-steel-doors-details/16.png', '/iron-steel-doors-details/17.png'],
-    'wooden-doors': ['/wooden-doors-details/19.png', '/wooden-doors-details/20.png', '/wooden-doors-details/21.png', '/wooden-doors-details/22.png'],
-    'aluminium-doors': ['/aluminium-doors-details/24.png', '/aluminium-doors-details/25.png', '/aluminium-doors-details/26.png', '/aluminium-doors-details/27.png'],
-    'emergency-exit-doors': ['/emeregency-exit-doors-details/29.png', '/emeregency-exit-doors-details/30.png', '/emeregency-exit-doors-details/31.png'],
-};
 
 function ProductsContent() {
     const { t } = useLanguage();
@@ -60,10 +52,6 @@ function ProductsContent() {
     const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [inquiryForm, setInquiryForm] = useState({ name: '', email: '', phone: '', message: '' });
-
-    // Spec images carousel
-    const [currentSpecImage, setCurrentSpecImage] = useState(0);
-    const currentSpecImages = activeCategory && specImages[activeCategory] ? specImages[activeCategory] : [];
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -186,37 +174,6 @@ function ProductsContent() {
                         <Link href="/products" className="text-[10px] font-bold text-gray-400 hover:text-red-500 uppercase tracking-widest transition-colors flex items-center gap-1">
                             <span>✕</span> {t('productsPage.clearFilters')}
                         </Link>
-                    </div>
-                )}
-
-                {/* Spec Images Carousel */}
-                {currentSpecImages.length > 0 && (
-                    <div className="mb-8">
-                        <div className="relative w-full h-[40vh] md:h-[50vh] lg:h-[55vh] rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white">
-                            <AnimatePresence initial={false} mode="wait">
-                                <motion.div key={currentSpecImage} initial={{ opacity: 0, x: 100 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -100 }} transition={{ duration: 0.3 }} className="absolute inset-0">
-                                    <Image src={currentSpecImages[currentSpecImage]} alt={`Specification ${currentSpecImage + 1}`} fill className="object-contain bg-white p-0" />
-                                </motion.div>
-                            </AnimatePresence>
-                            {currentSpecImages.length > 1 && (
-                                <>
-                                    <button onClick={() => setCurrentSpecImage(p => (p - 1 + currentSpecImages.length) % currentSpecImages.length)}
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg flex items-center justify-center hover:bg-white transition-all group">
-                                        <ChevronLeft className="w-5 h-5 text-gray-700 group-hover:text-blue-600" />
-                                    </button>
-                                    <button onClick={() => setCurrentSpecImage(p => (p + 1) % currentSpecImages.length)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg flex items-center justify-center hover:bg-white transition-all group">
-                                        <ChevronRight className="w-5 h-5 text-gray-700 group-hover:text-blue-600" />
-                                    </button>
-                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                                        {currentSpecImages.map((_, index) => (
-                                            <button key={index} onClick={() => setCurrentSpecImage(index)}
-                                                className={`h-2 rounded-full transition-all ${index === currentSpecImage ? 'bg-blue-600 w-6' : 'bg-gray-300 hover:bg-gray-400 w-2'}`} />
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </div>
                     </div>
                 )}
 

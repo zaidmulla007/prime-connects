@@ -11,6 +11,12 @@ class CategoriesModel extends BaseAppModel
         'parent_id', 'type', 'sort_order', 'path', 'depth', 'meta',
         'created_at', 'updated_at'
     ];
+    protected array $casts = [
+        'id'         => 'int',
+        'parent_id'  => '?int',
+        'sort_order' => 'int',
+        'depth'      => 'int',
+    ];
 
     public function findBySlug(string $slug): ?array
     {

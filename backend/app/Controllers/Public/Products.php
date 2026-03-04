@@ -59,7 +59,7 @@ class Products extends BaseController
                 ->where('product_id', $p['id'])
                 ->orderBy('sort_order', 'ASC')
                 ->limit(1)->get()->getRowArray();
-            $p['image'] = $img['url'] ?? null;
+            $p['image_url'] = $img['url'] ?? null;
             $enriched[] = $p;
         }
 

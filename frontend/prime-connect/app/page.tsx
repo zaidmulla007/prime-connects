@@ -36,27 +36,43 @@ const slideVariants = {
 
 interface Banner { id: number; image_url: string; is_active: number }
 
-const staticSlides = [
-  { image: "/banner-images/1.png", alt: "Prime Connect Banner 1" },
-  { image: "/banner-images/2.png", alt: "Prime Connect Banner 2" },
-  { image: "/banner-images/3.png", alt: "Prime Connect Banner 3" },
-  { image: "/banner-images/4.png", alt: "Prime Connect Banner 4" },
-  { image: "/banner-images/5.png", alt: "Prime Connect Banner 5" },
-];
+interface ApiCategory {
+  id: number;
+  name: string;
+  slug: string;
+  image_url: string | null;
+  description: string | null;
+  parent_id: number | null;
+  depth: number;
+}
+
+const categoryIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  'core-panels': Layers, 'doors': Home, 'cabinet': Building2,
+  'kitchen-cabinets': Building2, 'color-card': Layers,
+  'hardware-accessories': ShieldCheck, 'wardrobe': Building2, 'wardrobes': Building2,
+};
 
 export default function HomePage() {
   const { t } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(0);
-  const [heroSlides, setHeroSlides] = useState(staticSlides);
+  const [heroSlides, setHeroSlides] = useState<{ image: string; alt: string }[]>([]);
+  const [bannersLoading, setBannersLoading] = useState(true);
+  const [productCategories, setProductCategories] = useState<ApiCategory[]>([]);
 
   useEffect(() => {
     let mounted = true;
     api.get('/public/banners/active').then(res => {
       const banners: Banner[] = res.data?.data ?? [];
-      if (mounted && banners.length > 0) {
+      if (mounted) {
         setHeroSlides(banners.map(b => ({ image: imgUrl(b.image_url), alt: 'Banner' })));
+        setBannersLoading(false);
       }
+    }).catch(() => { if (mounted) setBannersLoading(false); });
+    api.get('/public/categories?flat=1').then(res => {
+      const all: ApiCategory[] = res.data?.data ?? [];
+      const roots = all.filter(c => Number(c.depth) === 0);
+      if (mounted) setProductCategories(roots);
     }).catch(() => {});
     return () => { mounted = false; };
   }, []);
@@ -94,14 +110,6 @@ export default function HomePage() {
     { id: "steelDoor", flag: "🇨🇳" }, { id: "fireproof", flag: "🇨🇳" },
   ];
 
-  const productCategories = [
-    { id: 'corePanels', slug: 'core-panels', image: "/home/core-panels.jpg", icon: Layers },
-    { id: 'doors', slug: 'doors', image: "/home/doors.jpg", icon: Home },
-    { id: 'cabinet', slug: 'cabinet', image: "/home/cabinet.jpg", icon: Building2 },
-    { id: 'colorCard', slug: 'color-card', image: "/home/color-card.webp", icon: Layers },
-    { id: 'hardware', slug: 'hardware-accessories', image: "/home/hardware-accessories.jpg", icon: ShieldCheck },
-    { id: 'wardrobe', slug: 'wardrobe', image: "/home/wardrobe.jpg", icon: Building2 },
-  ];
 
   return (
     <>
@@ -109,42 +117,48 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="relative w-full h-screen overflow-hidden">
-        <div className="relative w-full h-full">
-          <AnimatePresence initial={false} custom={direction} mode="wait">
-            <motion.div
-              key={currentSlide}
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
-              className="absolute inset-0 w-full h-full"
-            >
-              <div className="relative w-full h-full">
-                <Image src={heroSlides[currentSlide].image} alt={heroSlides[currentSlide].alt} fill className="object-cover" priority sizes="100vw" />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
+        {bannersLoading || heroSlides.length === 0 ? (
+          <div className="w-full h-full bg-gradient-to-br from-blue-100 via-gray-100 to-purple-100 animate-pulse" />
+        ) : (
+          <>
+            <div className="relative w-full h-full">
+              <AnimatePresence initial={false} custom={direction} mode="wait">
+                <motion.div
+                  key={currentSlide}
+                  custom={direction}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
+                  className="absolute inset-0 w-full h-full"
+                >
+                  <div className="relative w-full h-full">
+                    <Image src={heroSlides[currentSlide].image} alt={heroSlides[currentSlide].alt} fill className="object-cover" priority sizes="100vw" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
 
-        <button onClick={() => paginate(-1)} className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40 transition-all border border-white/30">
-          <ChevronLeft size={28} />
-        </button>
-        <button onClick={() => paginate(1)} className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40 transition-all border border-white/30">
-          <ChevronRight size={28} />
-        </button>
+            <button onClick={() => paginate(-1)} className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40 transition-all border border-white/30">
+              <ChevronLeft size={28} />
+            </button>
+            <button onClick={() => paginate(1)} className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40 transition-all border border-white/30">
+              <ChevronRight size={28} />
+            </button>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
-          {heroSlides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => { setDirection(index > currentSlide ? 1 : -1); setCurrentSlide(index); }}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide ? 'bg-white w-8' : 'bg-white/50 hover:bg-white/75'}`}
-            />
-          ))}
-        </div>
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+              {heroSlides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => { setDirection(index > currentSlide ? 1 : -1); setCurrentSlide(index); }}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide ? 'bg-white w-8' : 'bg-white/50 hover:bg-white/75'}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       {/* About Section */}
@@ -190,30 +204,39 @@ export default function HomePage() {
           </motion.div>
 
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {productCategories.map((cat) => (
-              <motion.div key={cat.id} variants={scaleIn} whileHover={{ y: -12, scale: 1.02 }} className="group relative rounded-3xl overflow-hidden bg-white shadow-2xl flex flex-col h-[420px] hover:shadow-blue-500/20 transition-all duration-500 border-4 border-white">
-                <Link href={cat.id === 'wardrobe' ? `/product/${cat.slug}` : `/products?category=${cat.slug}`} className="flex flex-col h-full">
-                  <div className="relative overflow-hidden" style={{ height: '85%' }}>
-                    <Image src={cat.image} alt={cat.id} fill className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900/95 via-gray-900/40 to-transparent opacity-70 group-hover:opacity-85 transition-opacity duration-500" />
-                    <div className="absolute top-6 left-6">
-                      <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border-2 border-white/40 shadow-lg group-hover:scale-110 transition-all duration-300">
-                        <cat.icon className="w-8 h-8 text-white" />
+            {productCategories.length === 0 ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-3xl bg-white/20 h-[420px] animate-pulse" />
+              ))
+            ) : productCategories.map((cat) => {
+              const IconComp = categoryIconMap[cat.slug] ?? Layers;
+              const link = `/products?category=${cat.slug}`;
+              const imageSrc = cat.image_url ? imgUrl(cat.image_url) : '/home/core-panels.jpg';
+              return (
+                <motion.div key={cat.id} variants={scaleIn} whileHover={{ y: -12, scale: 1.02 }} className="group relative rounded-3xl overflow-hidden bg-white shadow-2xl flex flex-col h-[420px] hover:shadow-blue-500/20 transition-all duration-500 border-4 border-white">
+                  <Link href={link} className="flex flex-col h-full">
+                    <div className="relative overflow-hidden" style={{ height: '85%' }}>
+                      <Image src={imageSrc} alt={cat.name} fill className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/95 via-gray-900/40 to-transparent opacity-70 group-hover:opacity-85 transition-opacity duration-500" />
+                      <div className="absolute top-6 left-6">
+                        <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border-2 border-white/40 shadow-lg group-hover:scale-110 transition-all duration-300">
+                          <IconComp className="w-8 h-8 text-white" />
+                        </div>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <h3 className="text-xl font-bold text-white">{cat.name}</h3>
                       </div>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <h3 className="text-xl font-bold text-white">{t(`products.categories.${cat.id}.title`)}</h3>
+                    <div className="px-4 py-3 bg-white flex items-center justify-between" style={{ height: '15%' }}>
+                      <p className="text-gray-600 text-xs line-clamp-1 flex-1">{cat.description || ''}</p>
+                      <span className="inline-flex items-center text-sm font-bold text-blue-600 gap-1.5 ml-2">
+                        {t('products.explore')}<ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                      </span>
                     </div>
-                  </div>
-                  <div className="px-4 py-3 bg-white flex items-center justify-between" style={{ height: '15%' }}>
-                    <p className="text-gray-600 text-xs line-clamp-1 flex-1">{t(`products.categories.${cat.id}.desc`)}</p>
-                    <span className="inline-flex items-center text-sm font-bold text-blue-600 gap-1.5 ml-2">
-                      {t('products.explore')}<ArrowRight className="w-4 h-4 rtl:rotate-180" />
-                    </span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+                  </Link>
+                </motion.div>
+              );
+            })}
           </motion.div>
 
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mt-12">

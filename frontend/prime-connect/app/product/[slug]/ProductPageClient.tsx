@@ -47,14 +47,6 @@ interface ApplicationsData {
     zh?: string[];
 }
 
-const specImages: { [key: string]: string[] } = {
-    'mdf-doors': ['/mdf-doors-details/3.png', '/mdf-doors-details/4.png', '/mdf-doors-details/5.png', '/mdf-doors-details/6.png', '/mdf-doors-details/7.png'],
-    'wpc-doors': ['/wpc-door-details/9.png', '/wpc-door-details/10.png', '/wpc-door-details/11.png', '/wpc-door-details/12.png', '/wpc-door-details/13.png'],
-    'iron-and-steel-doors': ['/iron-steel-doors-details/15.png', '/iron-steel-doors-details/16.png', '/iron-steel-doors-details/17.png'],
-    'wooden-doors': ['/wooden-doors-details/19.png', '/wooden-doors-details/20.png', '/wooden-doors-details/21.png', '/wooden-doors-details/22.png'],
-    'aluminium-doors': ['/aluminium-doors-details/24.png', '/aluminium-doors-details/25.png', '/aluminium-doors-details/26.png', '/aluminium-doors-details/27.png'],
-    'emergency-exit-doors': ['/emeregency-exit-doors-details/29.png', '/emeregency-exit-doors-details/30.png', '/emeregency-exit-doors-details/31.png'],
-};
 
 export default function ProductPageClient() {
     const { t, language } = useLanguage();
@@ -69,7 +61,6 @@ export default function ProductPageClient() {
     const [notFound, setNotFound] = useState(false);
 
     const [currentImage, setCurrentImage] = useState(0);
-    const [currentSpecImage, setCurrentSpecImage] = useState(0);
     const [showZoom, setShowZoom] = useState(false);
     const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
 
@@ -135,8 +126,6 @@ export default function ProductPageClient() {
         }
     };
 
-    const slugSpecImages = specImages[slug] || [];
-    const hasSpecImages = slugSpecImages.length > 0;
     const currentImageSrc = images.length > 0 ? imgUrl(images[currentImage]?.url) : '/placeholder.jpg';
     const applicationsForLang: string[] = (applications as Record<string, string[]>)[language] ?? applications.en ?? [];
 
@@ -289,45 +278,8 @@ export default function ProductPageClient() {
                                     </div>
                                 </div>
 
-                                {/* Specification Images Section */}
-                                {hasSpecImages && (
-                                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                                        className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 lg:p-12">
-                                        <h4 className="text-lg font-bold text-gray-900 mb-8">{t('productDetail.specifications')}</h4>
-                                        <div className="relative">
-                                            <div className="relative w-full h-[40vh] md:h-[50vh] lg:h-[55vh] rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white">
-                                                <AnimatePresence initial={false} mode="wait">
-                                                    <motion.div key={currentSpecImage} initial={{ opacity: 0, x: 100 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -100 }} transition={{ duration: 0.3 }} className="absolute inset-0">
-                                                        <Image src={slugSpecImages[currentSpecImage]} alt={`${product.name} specification ${currentSpecImage + 1}`} fill className="object-contain bg-white p-0" />
-                                                    </motion.div>
-                                                </AnimatePresence>
-                                                {slugSpecImages.length > 1 && (
-                                                    <>
-                                                        <button onClick={() => setCurrentSpecImage(p => p === 0 ? slugSpecImages.length - 1 : p - 1)}
-                                                            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/80 backdrop-blur-sm text-gray-800 hover:bg-white transition-all border border-gray-200 shadow-md">
-                                                            <ChevronLeft size={24} />
-                                                        </button>
-                                                        <button onClick={() => setCurrentSpecImage(p => p === slugSpecImages.length - 1 ? 0 : p + 1)}
-                                                            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/80 backdrop-blur-sm text-gray-800 hover:bg-white transition-all border border-gray-200 shadow-md">
-                                                            <ChevronRight size={24} />
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </div>
-                                            {slugSpecImages.length > 1 && (
-                                                <div className="flex justify-center gap-2 mt-6">
-                                                    {slugSpecImages.map((_, index) => (
-                                                        <button key={index} onClick={() => setCurrentSpecImage(index)}
-                                                            className={`h-2 rounded-full transition-all duration-300 ${index === currentSpecImage ? 'bg-blue-600 w-8' : 'bg-gray-300 hover:bg-gray-400 w-2'}`} />
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                )}
-
-                                {/* Specs Table (only if no spec images and specs exist) */}
-                                {!hasSpecImages && specs.length > 0 && (
+                                {/* Specs Table */}
+                                {specs.length > 0 && (
                                     <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
                                         className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 lg:p-12">
                                         <h4 className="text-lg font-bold text-gray-900 mb-8">{t('productDetail.specifications')}</h4>

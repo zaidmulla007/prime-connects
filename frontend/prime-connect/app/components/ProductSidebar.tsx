@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { navigationCategories } from "../data/constants";
+import api from "../lib/axios";
 import { useLanguage } from "../context/LanguageContext";
+
+interface NavCategory {
+    id: number;
+    name: string;
+    slug: string;
+    meta: string | null;
+    depth: number;
+    parent_id: number | null;
+    children: NavCategory[];
+}
 
 interface ProductSidebarProps {
     activeSlug?: string;
@@ -15,12 +25,33 @@ interface ProductSidebarProps {
 
 export default function ProductSidebar({ activeSlug, activeCategory, filterMode = false }: ProductSidebarProps) {
     const { t, language } = useLanguage();
+    const [categories, setCategories] = useState<NavCategory[]>([]);
+    const [openCategories, setOpenCategories] = useState<string[]>([]);
 
-    const defaultOpenCategory = navigationCategories.find(cat =>
-        cat.slug === activeCategory || cat.items.some(item => item.slug === activeSlug)
-    )?.slug || "doors";
+    const getCatName = (cat: NavCategory): string => {
+        if (language === 'en') return cat.name;
+        try {
+            const meta = cat.meta ? JSON.parse(cat.meta) : {};
+            if (language === 'ar') return meta.name_ar || cat.name;
+            if (language === 'zh') return meta.name_zh || cat.name;
+        } catch { /* empty */ }
+        return cat.name;
+    };
 
-    const [openCategories, setOpenCategories] = useState<string[]>([defaultOpenCategory]);
+    useEffect(() => {
+        let mounted = true;
+        api.get('/public/categories').then(res => {
+            if (!mounted) return;
+            const tree: NavCategory[] = res.data?.data ?? [];
+            setCategories(tree);
+            // Auto-open the parent that contains the active item
+            const active = tree.find(cat =>
+                cat.slug === activeCategory || cat.children.some(item => item.slug === activeSlug)
+            );
+            setOpenCategories(active ? [active.slug] : (tree[0] ? [tree[0].slug] : []));
+        }).catch(() => {});
+        return () => { mounted = false; };
+    }, [activeSlug, activeCategory]);
 
     const toggleCategory = (categorySlug: string) => {
         setOpenCategories(prev =>
@@ -39,16 +70,16 @@ export default function ProductSidebar({ activeSlug, activeCategory, filterMode 
             </div>
 
             <div className="divide-y divide-gray-100">
-                {navigationCategories.map((category) => {
+                {categories.map((category) => {
                     const isOpen = openCategories.includes(category.slug);
-                    const isActiveParent = category.slug === activeCategory || category.items.some(item => item.slug === activeSlug);
-                    const categoryName = category.name[language as keyof typeof category.name] || category.name.en;
+                    const isActiveParent = category.slug === activeCategory || category.children.some(item => item.slug === activeSlug);
+                    const categoryName = getCatName(category);
 
-                    if (category.slug === "color-card" || category.slug === "wardrobe") {
+                    if (category.children.length === 0) {
                         return (
                             <div key={category.slug} className="bg-white">
                                 <Link
-                                    href={`/product/${category.slug}`}
+                                    href={`/products?category=${category.slug}`}
                                     className={`block w-full px-6 py-4 transition-colors hover:bg-gray-50 font-semibold text-base ${activeSlug === category.slug ? 'text-blue-600 bg-blue-50/50' : 'text-gray-800'}`}
                                 >
                                     {categoryName}
@@ -82,13 +113,13 @@ export default function ProductSidebar({ activeSlug, activeCategory, filterMode 
                                         className="overflow-hidden bg-gray-50/50"
                                     >
                                         <div className="flex flex-col">
-                                            {category.items.map((item) => {
+                                            {category.children.map((item) => {
                                                 const isActive = item.slug === activeSlug;
-                                                const itemName = item.name[language as keyof typeof item.name] || item.name.en;
+                                                const itemName = getCatName(item);
                                                 return (
                                                     <Link
                                                         key={item.slug}
-                                                        href={filterMode ? `/products?slug=${item.slug}` : `/product/${item.slug}`}
+                                                        href={`/products?category=${item.slug}`}
                                                         className={`px-8 py-3 text-sm transition-all border-l-4 ${isActive ? 'border-blue-600 bg-white text-blue-600 font-medium shadow-sm' : 'border-transparent text-gray-600 hover:text-blue-600 hover:bg-gray-100'}`}
                                                     >
                                                         {itemName}

@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: {
     unoptimized: true,
+    remotePatterns: [
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "https", hostname: "*.primeconnects.ae" },
+      { protocol: "https", hostname: "primeconnects.ae" },
+    ],
   },
 };
 

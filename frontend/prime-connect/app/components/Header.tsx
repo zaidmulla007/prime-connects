@@ -7,7 +7,17 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Phone, Mail, Facebook, Instagram, Linkedin, Youtube, Globe, Download, Images, Video } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
-import { navigationCategories } from "../data/constants";
+import api from "../lib/axios";
+
+interface NavCategory {
+    id: number;
+    name: string;
+    slug: string;
+    meta: string | null;
+    depth: number;
+    parent_id: number | null;
+    children: NavCategory[];
+}
 
 const contactInfo = {
     emails: ["info@primeconnects.ae", "abde@primeconnects.ae"],
@@ -39,6 +49,17 @@ export default function Header() {
     const [isBrochuresOpen, setIsBrochuresOpen] = useState(false);
     const [openMobileCategory, setOpenMobileCategory] = useState<string | null>(null);
     const [openSubCategory, setOpenSubCategory] = useState<string | null>(null);
+    const [navCategories, setNavCategories] = useState<NavCategory[]>([]);
+
+    const getCatName = (cat: NavCategory): string => {
+        if (language === 'en') return cat.name;
+        try {
+            const meta = cat.meta ? JSON.parse(cat.meta) : {};
+            if (language === 'ar') return meta.name_ar || cat.name;
+            if (language === 'zh') return meta.name_zh || cat.name;
+        } catch { /* empty */ }
+        return cat.name;
+    };
 
     const languages = [
         { code: "en", label: t('header.langEn') },
@@ -58,12 +79,18 @@ export default function Header() {
         { name: t('br.smartLocks'), file: "/brochures/PrimeconnectsSmartRimLocks.pdf" },
     ];
 
-    const productCategories = navigationCategories;
-
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    useEffect(() => {
+        let mounted = true;
+        api.get('/public/categories').then(res => {
+            if (mounted) setNavCategories(res.data?.data ?? []);
+        }).catch(() => {});
+        return () => { mounted = false; };
     }, []);
 
     const navLinks = [
@@ -187,13 +214,13 @@ export default function Header() {
                                                         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex shadow-blue-900/5">
                                                             {/* Left Sidebar: Categories */}
                                                             <div className="w-64 bg-white p-2 flex flex-col gap-1">
-                                                                {productCategories.map((category) => {
-                                                                    const categoryName = category.name[language as keyof typeof category.name] || category.name.en;
-                                                                    if (category.slug === "color-card" || category.slug === "wardrobe") {
+                                                                {navCategories.map((category) => {
+                                                                    const categoryName = getCatName(category);
+                                                                    if (category.children.length === 0) {
                                                                         return (
                                                                             <Link
                                                                                 key={category.slug}
-                                                                                href={`/product/${category.slug}`}
+                                                                                href={`/products?category=${category.slug}`}
                                                                                 onMouseEnter={() => setActiveCategory(null)}
                                                                                 className="flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                                                                             >
@@ -222,9 +249,9 @@ export default function Header() {
 
                                                             {/* Right Content */}
                                                             {activeCategory && (() => {
-                                                                const activeCat = productCategories.find(c => c.slug === activeCategory);
+                                                                const activeCat = navCategories.find(c => c.slug === activeCategory);
                                                                 if (!activeCat) return null;
-                                                                const activeCatName = activeCat.name[language as keyof typeof activeCat.name] || activeCat.name.en;
+                                                                const activeCatName = getCatName(activeCat);
                                                                 return (
                                                                     <div className="w-64 p-4 bg-gray-50/50 border-l border-gray-100">
                                                                         <div className="h-full flex flex-col">
@@ -235,12 +262,12 @@ export default function Header() {
                                                                                 </Link>
                                                                             </div>
                                                                             <div className="flex flex-col gap-1">
-                                                                                {activeCat.items.map((item, idx) => {
-                                                                                    const itemName = item.name[language as keyof typeof item.name] || item.name.en;
+                                                                                {activeCat.children.map((item, idx) => {
+                                                                                    const itemName = getCatName(item);
                                                                                     return (
                                                                                         <Link
                                                                                             key={idx}
-                                                                                            href={`/product/${item.slug}`}
+                                                                                            href={`/products?category=${item.slug}`}
                                                                                             className="group flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-blue-50 transition-all"
                                                                                         >
                                                                                             <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-blue-500 transition-colors" />
@@ -362,11 +389,11 @@ export default function Header() {
                                                                     </div>
                                                                 ) : (
                                                                     <div className="px-4 pb-4 pt-2 space-y-3">
-                                                                        {productCategories.map((category, catIndex) => {
-                                                                            const categoryName = category.name[language as keyof typeof category.name] || category.name.en;
-                                                                            if (category.slug === "color-card" || category.slug === "wardrobe") {
+                                                                        {navCategories.map((category, catIndex) => {
+                                                                            const categoryName = getCatName(category);
+                                                                            if (category.children.length === 0) {
                                                                                 return (
-                                                                                    <Link key={catIndex} href={`/product/${category.slug}`} onClick={() => setIsMobileMenuOpen(false)}
+                                                                                    <Link key={catIndex} href={`/products?category=${category.slug}`} onClick={() => setIsMobileMenuOpen(false)}
                                                                                         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group">
                                                                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:scale-125 transition-transform" />
                                                                                         <span className="font-medium text-gray-800 text-sm group-hover:text-blue-600">{categoryName}</span>
@@ -395,10 +422,10 @@ export default function Header() {
                                                                                                 className="overflow-hidden bg-gray-50"
                                                                                             >
                                                                                                 <div className="px-3 pb-3 pt-1 space-y-1">
-                                                                                                    {category.items.map((item, itemIndex) => {
-                                                                                                        const itemName = item.name[language as keyof typeof item.name] || item.name.en;
+                                                                                                    {category.children.map((item, itemIndex) => {
+                                                                                                        const itemName = getCatName(item);
                                                                                                         return (
-                                                                                                            <Link key={itemIndex} href={`/product/${item.slug}`} onClick={() => setIsMobileMenuOpen(false)}
+                                                                                                            <Link key={itemIndex} href={`/products?category=${item.slug}`} onClick={() => setIsMobileMenuOpen(false)}
                                                                                                                 className="flex items-center gap-2 px-2 py-1.5 rounded-md text-gray-600 text-xs hover:bg-white hover:text-blue-600 transition-colors">
                                                                                                                 <div className="w-1 h-1 rounded-full bg-gray-400" />
                                                                                                                 {itemName}
