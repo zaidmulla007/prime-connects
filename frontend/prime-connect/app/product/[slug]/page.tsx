@@ -2,8 +2,9 @@ import ProductPageClient from "./ProductPageClient";
 
 // Default slugs used as fallback when the API is unavailable during build
 const FALLBACK_SLUGS = [
-    'mdf-doors', 'wpc-doors', 'wooden-doors', 'aluminium-doors',
-    'iron-and-steel-doors', 'emergency-exit-doors', 'core-panels', 'color-card',
+    'mdf-door-mdfd001', 'wpc-door-wpcd001', 'wooden-door-wdnd001',
+    'aluminium-door-ald001', 'iron-steel-door-i-sd001', 'emergency-exit-door-emgd001',
+    'glass-door-gl1', 'color-card-clrc001',
 ];
 
 // Generate static params from API at build time

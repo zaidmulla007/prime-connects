@@ -24,13 +24,15 @@ class Products extends BaseController
 
         $result = $this->model->paginated($page, $perPage, $q, $catId);
 
-        // Attach first image
+        // Attach first image + image count
         $db = \Config\Database::connect();
         foreach ($result['data'] as &$p) {
             $img = $db->table('product_images')
                 ->where('product_id', $p['id'])
                 ->orderBy('sort_order', 'ASC')->limit(1)->get()->getRowArray();
-            $p['image'] = $img['url'] ?? null;
+            $p['image_url']   = $img['url'] ?? null;
+            $p['image_count'] = (int) $db->table('product_images')
+                ->where('product_id', $p['id'])->countAllResults();
         }
 
         return $this->response->setJSON([
@@ -46,7 +48,7 @@ class Products extends BaseController
 
     public function show(int $id): ResponseInterface
     {
-        $product = $this->model->withOnlyTrashed()->find($id) ?? $this->model->find($id);
+        $product = $this->model->withDeleted()->find($id);
         if (!$product) return $this->response->setStatusCode(404)->setJSON(['error' => 'Product not found.']);
         return $this->response->setJSON(['data' => $this->model->withImagesAndSpecs($product)]);
     }

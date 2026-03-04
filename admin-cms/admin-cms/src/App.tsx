@@ -13,6 +13,7 @@ import Categories from '@/pages/Categories'
 import Banners from '@/pages/Banners'
 import Inquiries from '@/pages/Inquiries'
 import Projects from '@/pages/Projects'
+import ProjectVideos from '@/pages/ProjectVideos'
 import Certificates from '@/pages/Certificates'
 import ProductList from '@/pages/product/ProductList'
 import ProductDetails from '@/pages/product/ProductDetails'
@@ -24,6 +25,7 @@ const pageTitles: Record<string, string> = {
   '/banners': 'Banners',
   '/inquiries': 'Inquiries',
   '/projects': 'Projects',
+  '/project-videos': 'Project Videos',
   '/certificates': 'Certificates',
   '/users': 'Users',
   '/profile': 'Profile',
@@ -44,11 +46,12 @@ function ProtectedLayout() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<ProductList />} />
-            <Route path="/product/:slug" element={<ProductDetails />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/banners" element={<Banners />} />
             <Route path="/inquiries" element={<Inquiries />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/project-videos" element={<ProjectVideos />} />
             <Route path="/certificates" element={<Certificates />} />
             <Route path="/users" element={<Users />} />
             <Route path="/profile" element={<Profile />} />

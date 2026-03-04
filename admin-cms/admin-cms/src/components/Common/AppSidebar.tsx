@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Tag, Image, MessageSquare,
-  Users, User, FolderOpen, Award, LogOut
+  Users, User, FolderOpen, Award, LogOut, Video
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/categories', icon: Tag, label: 'Categories' },
   { to: '/banners', icon: Image, label: 'Banners' },
   { to: '/projects', icon: FolderOpen, label: 'Projects' },
+  { to: '/project-videos', icon: Video, label: 'Project Videos' },
   { to: '/certificates', icon: Award, label: 'Certificates' },
   { to: '/inquiries', icon: MessageSquare, label: 'Inquiries' },
 ]

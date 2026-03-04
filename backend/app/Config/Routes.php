@@ -28,6 +28,7 @@ $routes->get('api/public/banners/active',        'Public\Banners::active');
 $routes->post('api/public/inquiries',            'Public\Inquiries::create');
 
 $routes->get('api/public/projects',              'Public\Projects::index');
+$routes->get('api/public/project-videos',        'Public\ProjectVideos::index');
 $routes->get('api/public/certificates',          'Public\Certificates::index');
 
 // -----------------------------------------------
@@ -94,6 +95,13 @@ $routes->group('api', ['filter' => 'jwtAuth'], function ($routes) {
     $routes->get('projects/(:num)',              'Api\Projects::show/$1');
     $routes->put('projects/(:num)',              'Api\Projects::update/$1');
     $routes->delete('projects/(:num)',           'Api\Projects::delete/$1');
+
+    // Project Videos
+    $routes->get('project-videos',               'Api\ProjectVideos::index');
+    $routes->post('project-videos',              'Api\ProjectVideos::create');
+    $routes->get('project-videos/(:num)',         'Api\ProjectVideos::show/$1');
+    $routes->put('project-videos/(:num)',         'Api\ProjectVideos::update/$1');
+    $routes->delete('project-videos/(:num)',      'Api\ProjectVideos::delete/$1');
 
     // Certificates
     $routes->get('certificates',                 'Api\Certificates::index');

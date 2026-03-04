@@ -20,7 +20,7 @@ interface Spec { id: number; label: string; value: string; unit?: string; sort_o
 interface Category { id: number; name: string; depth: number }
 
 export default function ProductDetails() {
-  const { slug } = useParams<{ slug: string }>()
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [product, setProduct] = useState<Product | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
@@ -33,20 +33,15 @@ export default function ProductDetails() {
 
   const load = async () => {
     try {
-      const res = await client.get(`/api/products`)
-      // Find by slug
-      const all = res.data.data ?? []
-      const found = all.find((p: Product) => p.slug === slug)
-      if (!found) { toast.error('Product not found'); navigate('/products'); return }
-
-      const detail = await client.get(`/api/products/${found.id}`)
-      const p = detail.data.data
+      const res = await client.get(`/api/products/${id}`)
+      const p = res.data.data
+      if (!p) { toast.error('Product not found'); navigate('/products'); return }
       setProduct(p)
       setInfo({ name: p.name, sku: p.sku ?? '', description: p.description ?? '', category_id: p.category_id ? String(p.category_id) : '', is_active: !!p.is_active })
     } catch { toast.error('Failed to load product.') }
   }
 
-  useEffect(() => { load() }, [slug])
+  useEffect(() => { load() }, [id])
   useEffect(() => { client.get('/api/categories?flat=1').then(r => setCategories(r.data.data ?? [])) }, [])
 
   const saveInfo = async () => {

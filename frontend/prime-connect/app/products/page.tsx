@@ -3,13 +3,26 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Search, SlidersHorizontal, ChevronDown, X } from "lucide-react";
+import { ArrowRight, Search, SlidersHorizontal, ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../context/LanguageContext";
 import ProductSidebar from "../components/ProductSidebar";
 import api from "../lib/axios";
 import { imgUrl } from "../lib/utils";
+
+// Static spec/detail images shown per door category (design assets, not product data)
+const specImages: { [key: string]: string[] } = {
+    'mdf-doors': ['/mdf-doors-details/3.png', '/mdf-doors-details/4.png', '/mdf-doors-details/5.png', '/mdf-doors-details/6.png', '/mdf-doors-details/7.png'],
+    'wpc-doors': ['/wpc-door-details/9.png', '/wpc-door-details/10.png', '/wpc-door-details/11.png', '/wpc-door-details/12.png', '/wpc-door-details/13.png'],
+    'iron-and-steel-doors': ['/iron-steel-doors-details/15.png', '/iron-steel-doors-details/16.png', '/iron-steel-doors-details/17.png'],
+    'wooden-doors': ['/wooden-doors-details/19.png', '/wooden-doors-details/20.png', '/wooden-doors-details/21.png', '/wooden-doors-details/22.png'],
+    'aluminium-doors': ['/aluminium-doors-details/24.png', '/aluminium-doors-details/25.png', '/aluminium-doors-details/26.png', '/aluminium-doors-details/27.png'],
+    'emergency-exit-doors': ['/emeregency-exit-doors-details/29.png', '/emeregency-exit-doors-details/30.png', '/emeregency-exit-doors-details/31.png'],
+};
+
+// Categories whose products link to detail page instead of inquiry modal
+const DETAIL_LINK_SLUGS = ['mdf-core-panel', 'mr-mdf-core-panel', 'marine-construction-plywood', 'melamine-faced-mdf-panels', 'melamine-faced-plywood', 'solid-chip-board', 'core-panels'];
 
 const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
@@ -46,6 +59,10 @@ function ProductsContent() {
     const [loading, setLoading] = useState(true);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+    // Spec images carousel
+    const [currentSpecImage, setCurrentSpecImage] = useState(0);
+    const currentSpecImages = activeCategory && specImages[activeCategory] ? specImages[activeCategory] : [];
+
     // Inquiry modal state
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [showZoom, setShowZoom] = useState(false);
@@ -79,7 +96,7 @@ function ProductsContent() {
                 if (found) categoryId = found.id;
             }
 
-            const params: Record<string, string | number> = { limit: 100 };
+            const params: Record<string, string | number> = { per_page: 200 };
             if (categoryId) params.category_id = categoryId;
 
             try {
@@ -177,6 +194,33 @@ function ProductsContent() {
                     </div>
                 )}
 
+                {/* Spec Images Carousel — shown only for door categories */}
+                {currentSpecImages.length > 0 && (
+                    <div className="mb-8 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="relative h-64 md:h-80">
+                            <Image src={currentSpecImages[currentSpecImage]} alt="Door specification" fill className="object-contain p-4" />
+                            {currentSpecImages.length > 1 && (
+                                <>
+                                    <button onClick={() => setCurrentSpecImage(i => (i - 1 + currentSpecImages.length) % currentSpecImages.length)}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 rounded-full shadow flex items-center justify-center hover:bg-white transition-colors">
+                                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                                    </button>
+                                    <button onClick={() => setCurrentSpecImage(i => (i + 1) % currentSpecImages.length)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 rounded-full shadow flex items-center justify-center hover:bg-white transition-colors">
+                                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                                    </button>
+                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                        {currentSpecImages.map((_, i) => (
+                                            <button key={i} onClick={() => setCurrentSpecImage(i)}
+                                                className={`w-2 h-2 rounded-full transition-colors ${i === currentSpecImage ? 'bg-blue-600' : 'bg-gray-300'}`} />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Loading State */}
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -192,33 +236,48 @@ function ProductsContent() {
                     </div>
                 ) : products.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {products.map((product) => (
-                            <motion.div key={product.id} initial="hidden" animate="visible" variants={fadeInUp} whileHover={{ y: -5 }}
-                                className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition-all overflow-hidden group cursor-pointer"
-                                onClick={() => setSelectedProduct(product)}>
-                                <div className="relative bg-white aspect-square overflow-hidden border-b border-gray-100">
-                                    <Image
-                                        src={product.image_url ? imgUrl(product.image_url) : '/placeholder.jpg'}
-                                        alt={product.name} fill
-                                        className="object-contain p-2 group-hover:scale-125 transition-transform duration-700 ease-out"
-                                    />
-                                </div>
-                                <div className="p-3 md:p-4">
-                                    {product.category_name && (
-                                        <span className="text-[8px] md:text-[9px] font-bold text-blue-600 uppercase tracking-widest opacity-70 block mb-1">
-                                            {product.category_name}
-                                        </span>
-                                    )}
-                                    <h4 className="text-xs md:text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1 mb-3">
-                                        {product.name}
-                                    </h4>
-                                    <div className="flex items-center gap-1 text-blue-600 text-[10px] font-bold">
-                                        <span>{t('productsPage.viewDetails')}</span>
-                                        <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                        {products.map((product) => {
+                            const isDetailLink = DETAIL_LINK_SLUGS.includes(activeCategory || '');
+                            const cardContent = (
+                                <>
+                                    <div className="relative bg-white aspect-square overflow-hidden border-b border-gray-100">
+                                        <Image
+                                            src={product.image_url ? imgUrl(product.image_url) : '/placeholder.jpg'}
+                                            alt={product.name} fill
+                                            className="object-contain p-2 group-hover:scale-125 transition-transform duration-700 ease-out"
+                                        />
                                     </div>
-                                </div>
-                            </motion.div>
-                        ))}
+                                    <div className="p-3 md:p-4">
+                                        {product.category_name && (
+                                            <span className="text-[8px] md:text-[9px] font-bold text-blue-600 uppercase tracking-widest opacity-70 block mb-1">
+                                                {product.category_name}
+                                            </span>
+                                        )}
+                                        <h4 className="text-xs md:text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1 mb-3">
+                                            {product.name}
+                                        </h4>
+                                        <div className="flex items-center gap-1 text-blue-600 text-[10px] font-bold">
+                                            <span>{t('productsPage.viewDetails')}</span>
+                                            <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                                        </div>
+                                    </div>
+                                </>
+                            );
+                            return isDetailLink ? (
+                                <Link key={product.id} href={`/product/${product.slug}`}>
+                                    <motion.div initial="hidden" animate="visible" variants={fadeInUp} whileHover={{ y: -5 }}
+                                        className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition-all overflow-hidden group cursor-pointer">
+                                        {cardContent}
+                                    </motion.div>
+                                </Link>
+                            ) : (
+                                <motion.div key={product.id} initial="hidden" animate="visible" variants={fadeInUp} whileHover={{ y: -5 }}
+                                    className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition-all overflow-hidden group cursor-pointer"
+                                    onClick={() => setSelectedProduct(product)}>
+                                    {cardContent}
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="bg-white rounded-3xl p-20 text-center border border-dashed border-gray-200">

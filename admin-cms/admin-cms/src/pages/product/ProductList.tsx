@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Plus, Search, Package } from 'lucide-react'
+import { Plus, Search, Package, X, Images } from 'lucide-react'
 import client from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 
-interface Product { id: number; name: string; slug: string; sku?: string; category_name?: string; image?: string; is_active: number; created_at: string }
+interface Product { id: number; name: string; slug: string; sku?: string; category_name?: string; image_url?: string; image_count?: number; is_active: number; created_at: string }
 interface Category { id: number; name: string; depth: number }
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080'
@@ -21,18 +21,19 @@ export default function ProductList() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [q, setQ] = useState('')
+  const [categoryId, setCategoryId] = useState('')
   const [categories, setCategories] = useState<Category[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   const [form, setForm] = useState({ name: '', sku: '', category_id: '' })
-  const perPage = 12
+  const perPage = 24
 
   const load = useCallback(async () => {
     try {
-      const res = await client.get('/api/products', { params: { page, per_page: perPage, q: q || undefined } })
+      const res = await client.get('/api/products', { params: { page, per_page: perPage, q: q || undefined, category_id: categoryId || undefined } })
       setProducts(res.data.data ?? [])
       setTotal(res.data.meta?.total ?? 0)
     } catch { toast.error('Failed to load products.') }
-  }, [page, q])
+  }, [page, q, categoryId])
 
   useEffect(() => { load() }, [load])
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function ProductList() {
       toast.success('Product created.')
       setCreateOpen(false)
       setForm({ name: '', sku: '', category_id: '' })
-      navigate(`/product/${res.data.slug}`)
+      navigate(`/product/${res.data.data.id}`)
     } catch (err: any) { toast.error(err?.response?.data?.error || 'Failed.') }
   }
 
@@ -54,13 +55,31 @@ export default function ProductList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{total} products</p>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <p className="text-sm text-slate-500">{total} products{categoryId ? ` in "${categories.find(c => String(c.id) === categoryId)?.name ?? ''}"` : ''}</p>
+        <div className="flex flex-wrap gap-2">
+          {/* Category filter */}
+          <Select value={categoryId || 'all'} onValueChange={v => { setCategoryId(v === 'all' ? '' : v); setPage(1) }}>
+            <SelectTrigger className="w-52 h-9 text-sm">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map(c => (
+                <SelectItem key={c.id} value={String(c.id)}>{'— '.repeat(c.depth)}{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Search */}
           <div className="relative">
             <Search size={15} className="absolute left-2.5 top-2.5 text-slate-400" />
-            <Input className="pl-8 w-52" placeholder="Search products..." value={q} onChange={e => { setQ(e.target.value); setPage(1) }} />
+            <Input className="pl-8 w-48 h-9" placeholder="Search..." value={q} onChange={e => { setQ(e.target.value); setPage(1) }} />
+            {q && <button onClick={() => { setQ(''); setPage(1) }} className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"><X size={14} /></button>}
           </div>
+          {/* Clear filters */}
+          {(categoryId || q) && (
+            <Button variant="ghost" size="sm" onClick={() => { setCategoryId(''); setQ(''); setPage(1) }}>Clear</Button>
+          )}
           <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
             <Plus size={16} />New Product
           </Button>
@@ -71,14 +90,20 @@ export default function ProductList() {
         {products.map(p => (
           <button
             key={p.id}
-            onClick={() => navigate(`/product/${p.slug}`)}
+            onClick={() => navigate(`/product/${p.id}`)}
             className="bg-white rounded-xl border border-slate-200 overflow-hidden text-left hover:shadow-md hover:-translate-y-0.5 transition-all"
           >
-            <div className="h-36 bg-slate-100 flex items-center justify-center">
-              {p.image ? (
-                <img src={`${API_BASE}${p.image}`} alt={p.name} className="w-full h-full object-cover" />
+            <div className="h-36 bg-slate-100 flex items-center justify-center relative">
+              {p.image_url ? (
+                <img src={`${API_BASE}${p.image_url}`} alt={p.name} className="w-full h-full object-cover" />
               ) : (
                 <Package size={32} className="text-slate-300" />
+              )}
+              {(p.image_count ?? 0) > 1 && (
+                <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                  <Images size={10} />
+                  {p.image_count}
+                </div>
               )}
             </div>
             <div className="p-3">
